@@ -1,6 +1,7 @@
 import { createCustomError } from "../customErrors/customError.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
 import Device from "../models/Device.js";
+import Controller from "../models/Controller.js";
 import cloudinary from "../config/cloudinary.js";
 
 const uploadToCloudinary = (fileBuffer) => {
@@ -104,12 +105,21 @@ export const updateDevice = asyncWrapper(async (req, res, next) => {
 });
 
 export const deleteDevice = asyncWrapper(async (req, res, next) => {
-  const device = await Device.findByIdAndDelete({ _id: req.params.id });
+  const device = await Device.findById(req.params.id);
 
   if (!device) {
     return next(
       createCustomError(`No Device Found with the id: ${req.params.id}!`, 404)
     );
   }
+
+  await Controller.updateMany(
+    { _id: { $in: device.controllers } },
+    { $pull: { devices: device._id } }
+  );
+
+  await Device.findByIdAndDelete(device._id);
+
   res.status(200).send("Device deleted successfully!");
 });
+

@@ -1,6 +1,7 @@
 import { createCustomError } from "../customErrors/customError.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
 import User from "../models/User.js";
+import Device from "../models/Device.js";
 
 export const createUser = asyncWrapper(async (req, res) => {
   const user = await User.create(req.body);
@@ -41,11 +42,21 @@ export const updateUser = asyncWrapper(async (req, res, next) => {
 });
 
 export const deleteUser = asyncWrapper(async (req, res, next) => {
-  const user = await User.findByIdAndDelete({ _id: req.params.id });
+  const user = await User.findById(req.params.id);
+
   if (!user) {
     return next(
       createCustomError(`No User Found with the id: ${req.params.id}!`, 404)
     );
   }
+
+  await Device.updateMany(
+    { user: user._id },
+    { $unset: { user: "" } }
+  );
+
+  await User.findByIdAndDelete(user._id);
+
   res.status(200).send("User deleted successfully!");
 });
+

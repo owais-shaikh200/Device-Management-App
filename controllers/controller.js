@@ -1,6 +1,7 @@
 import { createCustomError } from "../customErrors/customError.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
 import Controller from "../models/Controller.js";
+import Device from "../models/Device.js";
 
 export const createController = asyncWrapper(async (req, res) => {
   const controller = await Controller.create(req.body);
@@ -39,11 +40,20 @@ export const updateController = asyncWrapper(async (req, res, next) => {
 });
 
 export const deleteController = asyncWrapper(async (req, res, next) => {
-  const controller = await Controller.findByIdAndDelete(req.params.id);
+  const controller = await Controller.findById(req.params.id);
+  
   if (!controller) {
     return next(
       createCustomError(`No Controller Found with the id: ${req.params.id}!`, 404)
     );
   }
+
+  await Device.updateMany(
+    { controllers: controller._id },
+    { $pull: { controllers: controller._id } }
+  );
+
+  await Controller.findByIdAndDelete(req.params.id);
+
   res.status(200).send("Controller deleted successfully!");
 });
