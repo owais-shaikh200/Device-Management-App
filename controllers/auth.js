@@ -9,10 +9,8 @@ export const register = asyncWrapper(async (req, res, next) => {
     return next(createCustomError("Please provide all required fields", 400));
   }
 
-  // Create user
   const user = await User.create({ name, email, password });
 
-  // Generate token
   const token = user.createJWT();
 
   res.status(201).json({
