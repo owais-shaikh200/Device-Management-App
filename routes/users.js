@@ -128,6 +128,7 @@
 
 
 import express from "express";
+import { authenticateUser } from "../middlewares/authMiddleware.js";
 const userRoutes = express.Router();
 
 import {
@@ -141,10 +142,10 @@ import {
 import { createUserValidator, updateUserValidator } from "../validators/userValidator.js";
 import {validate } from "../middlewares/validate.js";
 
-userRoutes.get("/", getAllUsers);
-userRoutes.get("/:id", getSingleUser);
-userRoutes.post("/", createUserValidator, validate, createUser);
-userRoutes.put("/:id", updateUserValidator, validate, updateUser);
-userRoutes.delete("/:id", deleteUser);
+userRoutes.get("/", authenticateUser, getAllUsers);
+userRoutes.get("/:id", authenticateUser, getSingleUser);
+userRoutes.post("/", authenticateUser, createUserValidator, validate, createUser);
+userRoutes.put("/:id", authenticateUser, updateUserValidator, validate, updateUser);
+userRoutes.delete("/:id", authenticateUser, deleteUser);
 
 export default userRoutes;

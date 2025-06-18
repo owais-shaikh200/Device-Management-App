@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import connectDB from "./db/connection.js";
 import userRoutes from "./routes/users.js";
+import authRoutes from "./routes/auth.js";
 import controllerRoutes from "./routes/controller.js";
 import deviceRoutes from "./routes/device.js";
 import {errorHandlerMiddleware} from "./middlewares/errorHandler.js";
@@ -19,6 +20,7 @@ connectDB();
 app.use(express.json());
 
 // Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/controllers", controllerRoutes);
 app.use("/api/devices", deviceRoutes);

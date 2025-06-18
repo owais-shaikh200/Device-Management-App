@@ -163,6 +163,7 @@
 
 
 import express from "express";
+import { authenticateUser } from "../middlewares/authMiddleware.js";
 import { upload } from "../middlewares/multer.js";
 import {
   getAllDevices,
@@ -180,10 +181,11 @@ import {
 import { validate } from "../middlewares/validate.js";
 const deviceRoutes = express.Router();
 
-deviceRoutes.get("/", getAllDevices);
-deviceRoutes.get("/:id", getSingleDevice);
+deviceRoutes.get("/", authenticateUser, getAllDevices);
+deviceRoutes.get("/:id", authenticateUser, getSingleDevice);
 deviceRoutes.post(
   "/",
+  authenticateUser,
   upload.array("images"),
   createDeviceValidator,
   validate,
@@ -191,11 +193,12 @@ deviceRoutes.post(
 );
 deviceRoutes.put(
   "/:id",
+  authenticateUser,
   upload.array("images"),
   updateDeviceValidator,
   validate,
   updateDevice
 );
-deviceRoutes.delete("/:id", deleteDevice);
+deviceRoutes.delete("/:id", authenticateUser, deleteDevice);
 
 export default deviceRoutes;

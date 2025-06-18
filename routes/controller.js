@@ -127,6 +127,7 @@
 
 
 import express from "express";
+import { authenticateUser } from "../middlewares/authMiddleware.js";
 const controllerRoutes = express.Router();
 
 import {
@@ -144,10 +145,10 @@ import {
 
 import { validate } from "../middlewares/validate.js";
 
-controllerRoutes.get("/", getAllControllers);
-controllerRoutes.get("/:id", getSingleController);
-controllerRoutes.post("/", createControllerValidator, validate, createController);
-controllerRoutes.put("/:id", updateControllerValidator, validate, updateController);
-controllerRoutes.delete("/:id", deleteController);
+controllerRoutes.get("/", authenticateUser, getAllControllers);
+controllerRoutes.get("/:id", authenticateUser, getSingleController);
+controllerRoutes.post("/", authenticateUser, createControllerValidator, validate, createController);
+controllerRoutes.put("/:id", authenticateUser, updateControllerValidator, validate, updateController);
+controllerRoutes.delete("/:id", authenticateUser, deleteController);
 
 export default controllerRoutes;
