@@ -4,9 +4,18 @@ import Controller from "../models/Controller.js";
 import Device from "../models/Device.js";
 
 export const createController = asyncWrapper(async (req, res) => {
-  const controller = await Controller.create(req.body);
+  const { name, email, phone, devices } = req.body;
+
+  const controller = await Controller.create({
+    name,
+    email,
+    phone,
+    devices,
+  });
+
   res.status(201).json({ controller });
 });
+
 
 export const getAllControllers = asyncWrapper(async (req, res, next) => {
   const controllers = await Controller.find({}).populate("devices");
@@ -17,7 +26,11 @@ export const getAllControllers = asyncWrapper(async (req, res, next) => {
 });
 
 export const getSingleController = asyncWrapper(async (req, res, next) => {
-  const controller = await Controller.findById(req.params.id).populate("devices");
+  const { controllerID } = req.params;
+  if (!controllerID) {
+    return next(createCustomError("Controller ID is required!", 400));
+  }
+  const controller = await Controller.findById(controllerID).populate("devices");
   if (!controller) {
     return next(
       createCustomError(`No Controller Found with the id: ${req.params.id}!`, 404)
@@ -27,24 +40,35 @@ export const getSingleController = asyncWrapper(async (req, res, next) => {
 });
 
 export const updateController = asyncWrapper(async (req, res, next) => {
-  const controller = await Controller.findByIdAndUpdate(req.params.id, req.body, {
+  const {controllerID} = req.params;
+  const { name, email, phone, devices } = req.body;
+  if (!name || !email || !phone) {
+    return next(createCustomError("Name, email, and phone are required!", 400));
+  }
+  const controller = await Controller.findByIdAndUpdate(controllerID, {
+    name, 
+    email, 
+    phone, 
+    devices
+  }, {
     new: true,
     runValidators: true,
   });
   if (!controller) {
     return next(
-      createCustomError(`No Controller Found with the id: ${req.params.id}!`, 404)
+      createCustomError(`No Controller Found with the id: ${controllerID}!`, 404)
     );
   }
   res.status(200).json({ controller });
 });
 
 export const deleteController = asyncWrapper(async (req, res, next) => {
-  const controller = await Controller.findById(req.params.id);
+  const { controllerID } = req.params;
+  const controller = await Controller.findById(controllerID);
   
   if (!controller) {
     return next(
-      createCustomError(`No Controller Found with the id: ${req.params.id}!`, 404)
+      createCustomError(`No Controller Found with the id: ${controllerID}!`, 404)
     );
   }
 
@@ -53,7 +77,7 @@ export const deleteController = asyncWrapper(async (req, res, next) => {
     { $pull: { controllers: controller._id } }
   );
 
-  await Controller.findByIdAndDelete(req.params.id);
+  await Controller.findByIdAndDelete(controllerID);
 
   res.status(200).send("Controller deleted successfully!");
 });

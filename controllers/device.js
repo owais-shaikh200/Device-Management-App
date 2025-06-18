@@ -32,17 +32,34 @@ export const createDevice = asyncWrapper(async (req, res, next) => {
     }
   }
 
-  if (req.body.controllers && !Array.isArray(req.body.controllers)) {
-    req.body.controllers = [req.body.controllers];
+  let {
+    name,
+    model,
+    serialNumber,
+    manufacturer,
+    user,
+    controllers,
+    status
+  } = req.body;
+
+  if (controllers && !Array.isArray(controllers)) {
+    controllers = [controllers];
   }
 
-  req.body.images = imageUrls;
+  const device = await Device.create({
+    name,
+    model,
+    serialNumber,
+    manufacturer,
+    user,
+    controllers,
+    status,
+    images: imageUrls
+  });
 
-  
-    const device = await Device.create(req.body);
-    res.status(201).json({ device });
-  
+  res.status(201).json({ device });
 });
+
 
 export const getAllDevices = asyncWrapper(async (req, res, next) => {
   const devices = await Device.find({})
@@ -56,7 +73,8 @@ export const getAllDevices = asyncWrapper(async (req, res, next) => {
 });
 
 export const getSingleDevice = asyncWrapper(async (req, res, next) => {
-  const device = await Device.findOne({ _id: req.params.id })
+  const { deviceID } = req.params;
+  const device = await Device.findOne({ _id: deviceID })
     .populate("user")
     .populate("controllers");
 
@@ -69,6 +87,7 @@ export const getSingleDevice = asyncWrapper(async (req, res, next) => {
 });
 
 export const updateDevice = asyncWrapper(async (req, res, next) => {
+  const { deviceID } = req.params;
   let imageUrls = [];
 
   if (req.files && req.files.length > 0) {
@@ -77,39 +96,60 @@ export const updateDevice = asyncWrapper(async (req, res, next) => {
         uploadToCloudinary(file.buffer)
       );
       imageUrls = await Promise.all(uploadPromises);
-      req.body.images = imageUrls;
     } catch (err) {
       console.error("Cloudinary upload error:", err);
       return next(createCustomError("Image upload failed!", 500));
     }
   }
 
-  if (req.body.controllers && !Array.isArray(req.body.controllers)) {
-    req.body.controllers = [req.body.controllers];
+  let {
+    name,
+    model,
+    serialNumber,
+    manufacturer,
+    user,
+    controllers,
+    status
+  } = req.body;
+
+  if (controllers && !Array.isArray(controllers)) {
+    controllers = [controllers];
   }
 
-  
-    const device = await Device.findOneAndUpdate(
-      { _id: req.params.id },
-      req.body,
-      { new: true, runValidators: true }
-    );
+  const updatedData = {
+    ...(name && { name }),
+    ...(model && { model }),
+    ...(serialNumber && { serialNumber }),
+    ...(manufacturer && { manufacturer }),
+    ...(user && { user }),
+    ...(controllers && { controllers }),
+    ...(status && { status }),
+    ...(imageUrls.length > 0 && { images: imageUrls })
+  };
 
-    if (!device) {
-      return next(
-        createCustomError(`No Device Found with the id: ${req.params.id}!`, 404)
-      );
-    }
-    res.status(200).json({ device });
-  
-});
-
-export const deleteDevice = asyncWrapper(async (req, res, next) => {
-  const device = await Device.findById(req.params.id);
+  const device = await Device.findOneAndUpdate(
+    { _id: deviceID },
+    updatedData,
+    { new: true, runValidators: true }
+  );
 
   if (!device) {
     return next(
       createCustomError(`No Device Found with the id: ${req.params.id}!`, 404)
+    );
+  }
+
+  res.status(200).json({ device });
+});
+
+
+export const deleteDevice = asyncWrapper(async (req, res, next) => {
+  const { deviceID } = req.params;
+  const device = await Device.findById(deviceID);
+
+  if (!device) {
+    return next(
+      createCustomError(`No Device Found with the id: ${deviceID}!`, 404)
     );
   }
 

@@ -5,7 +5,6 @@ import { createCustomError } from "../customErrors/customError.js";
 export const register = asyncWrapper(async (req, res, next) => {
   const { name, email, password } = req.body;
 
-  // Check if all required fields are present
   if (!name || !email || !password) {
     return next(createCustomError("Please provide all required fields", 400));
   }

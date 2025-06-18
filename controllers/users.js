@@ -4,10 +4,18 @@ import User from "../models/User.js";
 import Device from "../models/Device.js";
 
 export const createUser = asyncWrapper(async (req, res) => {
-  const user = await User.create(req.body);
+  const { name, email, password, phone, role } = req.body;
+
+  const user = await User.create({
+    name,
+    email,
+    password,
+    phone,
+    role
+  });
   res.status(201).json({ user });
-  console.log(req.body);
 });
+
 
 export const getAllUsers = asyncWrapper(async (req, res, next) => {
   const users = await User.find({});
@@ -18,35 +26,46 @@ export const getAllUsers = asyncWrapper(async (req, res, next) => {
 });
 
 export const getSingleUser = asyncWrapper(async (req, res, next) => {
-  const user = await User.findOne({ _id: req.params.id });
+  const { userID } = req.params;
+  const user = await User.findOne({ _id: userID });
   if (!user) {
     return next(
-      createCustomError(`No User Found with the id: ${req.params.id}!`, 404)
+      createCustomError(`No User Found with the id: ${userID}!`, 404)
     );
   }
   res.status(200).json({ user });
 });
 
 export const updateUser = asyncWrapper(async (req, res, next) => {
-  const user = await User.findOneAndUpdate({ _id: req.params.id }, req.body, {
-    new: true,
-    runValidators: true,
-  });
+  const { userID } = req.params;
+  const { name, email, password, phone, role } = req.body;
+
+  const user = await User.findOneAndUpdate(
+    { _id: userID },
+    { name, email, password, phone, role },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
   if (!user) {
     return next(
-      createCustomError(`No User Found with the id: ${req.params.id}!`, 404)
+      createCustomError(`No User Found with the id: ${userID}!`, 404)
     );
   }
+
   res.status(201).json({ user });
-  console.log(req.body);
 });
 
+
 export const deleteUser = asyncWrapper(async (req, res, next) => {
-  const user = await User.findById(req.params.id);
+  const { userID } = req.params;
+  const user = await User.findById(userID);
 
   if (!user) {
     return next(
-      createCustomError(`No User Found with the id: ${req.params.id}!`, 404)
+      createCustomError(`No User Found with the id: ${userID}!`, 404)
     );
   }
 
