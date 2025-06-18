@@ -113,6 +113,15 @@ export const deleteDevice = asyncWrapper(async (req, res, next) => {
     );
   }
 
+  const imageDeletionPromises = device.images.map((imageUrl) => {
+    
+    const publicIdWithExtension = imageUrl.split("/").pop();
+    const publicId = publicIdWithExtension.split(".")[0];    
+    return cloudinary.uploader.destroy(publicId);
+  });
+
+  await Promise.all(imageDeletionPromises);
+
   await Controller.updateMany(
     { _id: { $in: device.controllers } },
     { $pull: { devices: device._id } }
@@ -122,4 +131,5 @@ export const deleteDevice = asyncWrapper(async (req, res, next) => {
 
   res.status(200).send("Device deleted successfully!");
 });
+
 
