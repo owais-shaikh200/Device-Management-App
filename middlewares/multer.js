@@ -1,9 +1,7 @@
 import multer from "multer";
 
-// Use memory storage to avoid saving files locally
 const storage = multer.memoryStorage();
 
-// File filter to allow image types only
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);

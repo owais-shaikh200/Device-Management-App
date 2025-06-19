@@ -1,32 +1,42 @@
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-dotenv.config();
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { jwt_secret, jwt_lifetime } from "../config/envConfig.js";
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, "User name is required!"],
-    trim: true,
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "User name is required!"],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required!"],
+      unique: true,
+      lowercase: true,
+      match: [/^\S+@\S+\.\S+$/, "Please provide a valid email address."],
+    },
+    phone: {
+      type: String,
+      required: [true, "Phone number is required!"],
+      unique: true,
+      match: [/^\d{10,15}$/, "Please provide a valid phone number."],
+    },
+    role: {
+      type: String,
+      enum: ["admin", "user"],
+      default: "user",
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required!"],
+      minlength: 6,
+      select: false,
+    },
   },
-  email: {
-    type: String,
-    required: [true, "Email is required!"],
-    unique: true,
-    lowercase: true,
-    match: [
-      /^\S+@\S+\.\S+$/,
-      "Please provide a valid email address.",
-    ],
-  },
-  password: {
-    type: String,
-    required: [true, "Password is required!"],
-    minlength: 6,
-    select: false, // exclude password from queries by default
-  },
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 // Hash password before saving
 userSchema.pre("save", async function () {
@@ -37,13 +47,9 @@ userSchema.pre("save", async function () {
 
 // Method to generate JWT token
 userSchema.methods.createJWT = function () {
-  return jwt.sign(
-    { userId: this._id, name: this.name },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: process.env.JWT_LIFETIME,
-    }
-  );
+  return jwt.sign({ userId: this._id, name: this.name }, jwt_secret, {
+    expiresIn: jwt_lifetime,
+  });
 };
 
 // Method to compare password during login

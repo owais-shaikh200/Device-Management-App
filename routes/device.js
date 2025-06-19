@@ -181,24 +181,28 @@ import {
 import { validate } from "../middlewares/validate.js";
 const deviceRoutes = express.Router();
 
-deviceRoutes.get("/", authenticateUser, getAllDevices);
-deviceRoutes.get("/:id", authenticateUser, getSingleDevice);
-deviceRoutes.post(
-  "/",
-  authenticateUser,
-  upload.array("images"),
-  createDeviceValidator,
-  validate,
-  createDevice
-);
-deviceRoutes.put(
-  "/:id",
-  authenticateUser,
-  upload.array("images"),
-  updateDeviceValidator,
-  validate,
-  updateDevice
-);
-deviceRoutes.delete("/:id", authenticateUser, deleteDevice);
+deviceRoutes
+  .route("/")
+  .get(authenticateUser, getAllDevices)
+  .post(
+    authenticateUser,
+    upload.array("images"),
+    createDeviceValidator,
+    validate,
+    createDevice
+  );
+
+deviceRoutes
+  .route("/:id")
+  .get(authenticateUser, getSingleDevice)
+  .put(
+    authenticateUser,
+    upload.array("images"),
+    updateDeviceValidator,
+    validate,
+    updateDevice
+  )
+  .delete(authenticateUser, deleteDevice);
+
 
 export default deviceRoutes;

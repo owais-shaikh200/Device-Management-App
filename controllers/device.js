@@ -1,21 +1,10 @@
-import { createCustomError } from "../customErrors/customError.js";
+import { createCustomError } from "../utils/customError.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
 import Device from "../models/Device.js";
 import Controller from "../models/Controller.js";
 import cloudinary from "../config/cloudinary.js";
-
-const uploadToCloudinary = (fileBuffer) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { resource_type: "image" },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result.secure_url);
-      }
-    );
-    stream.end(fileBuffer);
-  });
-};
+import {uploadToCloudinary} from "../utils/cloudinaryUpload.js";
+import { paginate } from "../utils/paginate.js";
 
 export const createDevice = asyncWrapper(async (req, res, next) => {
   let imageUrls = [];
@@ -60,21 +49,34 @@ export const createDevice = asyncWrapper(async (req, res, next) => {
   res.status(201).json({ device });
 });
 
-
 export const getAllDevices = asyncWrapper(async (req, res, next) => {
-  const devices = await Device.find({})
-    .populate("user")
-    .populate("controllers");
+  const { page, limit, skip } = paginate(req.query);
 
-  if (devices.length === 0) {
-    return next(createCustomError("No Devices Found!", 404));
+  const [devices, total] = await Promise.all([
+    Device.find({})
+      .skip(skip)
+      .limit(limit)
+      .populate("user")
+      .populate("controllers"),
+    Device.countDocuments()
+  ]);
+
+  if (!devices.length) {
+    return next(createCustomError("No devices found!", 404));
   }
-  res.status(200).json({ devices });
+
+  res.status(200).json({
+    totalItems: total,
+    currentPage: page,
+    itemsPerPage: limit,
+    items: devices
+  });
 });
 
+
 export const getSingleDevice = asyncWrapper(async (req, res, next) => {
-  const { deviceID } = req.params;
-  const device = await Device.findOne({ _id: deviceID })
+  const { id } = req.params;
+  const device = await Device.findOne({ _id: id })
     .populate("user")
     .populate("controllers");
 
@@ -87,7 +89,7 @@ export const getSingleDevice = asyncWrapper(async (req, res, next) => {
 });
 
 export const updateDevice = asyncWrapper(async (req, res, next) => {
-  const { deviceID } = req.params;
+  const { id } = req.params;
   let imageUrls = [];
 
   if (req.files && req.files.length > 0) {
@@ -128,7 +130,7 @@ export const updateDevice = asyncWrapper(async (req, res, next) => {
   };
 
   const device = await Device.findOneAndUpdate(
-    { _id: deviceID },
+    { _id: id },
     updatedData,
     { new: true, runValidators: true }
   );
@@ -144,12 +146,12 @@ export const updateDevice = asyncWrapper(async (req, res, next) => {
 
 
 export const deleteDevice = asyncWrapper(async (req, res, next) => {
-  const { deviceID } = req.params;
-  const device = await Device.findById(deviceID);
+  const { id } = req.params;
+  const device = await Device.findById(id);
 
   if (!device) {
     return next(
-      createCustomError(`No Device Found with the id: ${deviceID}!`, 404)
+      createCustomError(`No Device Found with the id: ${id}!`, 404)
     );
   }
 

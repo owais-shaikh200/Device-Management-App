@@ -145,10 +145,26 @@ import {
 
 import { validate } from "../middlewares/validate.js";
 
-controllerRoutes.get("/", authenticateUser, getAllControllers);
-controllerRoutes.get("/:id", authenticateUser, getSingleController);
-controllerRoutes.post("/", authenticateUser, createControllerValidator, validate, createController);
-controllerRoutes.put("/:id", authenticateUser, updateControllerValidator, validate, updateController);
-controllerRoutes.delete("/:id", authenticateUser, deleteController);
+controllerRoutes
+  .route("/")
+  .get(authenticateUser, getAllControllers)
+  .post(
+    authenticateUser,
+    createControllerValidator,
+    validate,
+    createController
+  );
+
+controllerRoutes
+  .route("/:id")
+  .get(authenticateUser, getSingleController)
+  .put(
+    authenticateUser,
+    updateControllerValidator,
+    validate,
+    updateController
+  )
+  .delete(authenticateUser, deleteController);
+
 
 export default controllerRoutes;

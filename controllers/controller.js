@@ -1,15 +1,20 @@
-import { createCustomError } from "../customErrors/customError.js";
+import { createCustomError } from "../utils/customError.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
 import Controller from "../models/Controller.js";
 import Device from "../models/Device.js";
+import { paginate } from "../utils/paginate.js";
 
 export const createController = asyncWrapper(async (req, res) => {
-  const { name, email, phone, devices } = req.body;
+  const { name, email, role, devices } = req.body;
+  
+  if (!name || !email) {
+    return res.status(400).json({ error: "Name, and email are required!" });
+  }
 
   const controller = await Controller.create({
     name,
     email,
-    phone,
+    role,
     devices,
   });
 
@@ -18,19 +23,36 @@ export const createController = asyncWrapper(async (req, res) => {
 
 
 export const getAllControllers = asyncWrapper(async (req, res, next) => {
-  const controllers = await Controller.find({}).populate("devices");
-  if (controllers.length === 0) {
-    return next(createCustomError("No Controller Found!", 404));
+  const { page, limit, skip } = paginate(req.query);
+
+  const [controllers, total] = await Promise.all([
+    Controller.find({})
+      .skip(skip)
+      .limit(limit)
+      .populate("devices"),
+    Controller.countDocuments()
+  ]);
+
+  if (!controllers.length) {
+    return next(createCustomError("No controllers found!", 404));
   }
-  res.status(200).json({ controllers });
+
+  res.status(200).json({
+    totalItems: total,
+    currentPage: page,
+    itemsPerPage: limit,
+    items: controllers
+  });
 });
 
+
+
 export const getSingleController = asyncWrapper(async (req, res, next) => {
-  const { controllerID } = req.params;
-  if (!controllerID) {
+  const { id } = req.params;
+  if (!id) {
     return next(createCustomError("Controller ID is required!", 400));
   }
-  const controller = await Controller.findById(controllerID).populate("devices");
+  const controller = await Controller.findById(id).populate("devices");
   if (!controller) {
     return next(
       createCustomError(`No Controller Found with the id: ${req.params.id}!`, 404)
@@ -40,15 +62,12 @@ export const getSingleController = asyncWrapper(async (req, res, next) => {
 });
 
 export const updateController = asyncWrapper(async (req, res, next) => {
-  const {controllerID} = req.params;
-  const { name, email, phone, devices } = req.body;
-  if (!name || !email || !phone) {
-    return next(createCustomError("Name, email, and phone are required!", 400));
-  }
-  const controller = await Controller.findByIdAndUpdate(controllerID, {
+  const {id} = req.params;
+  const { name, email, role, devices } = req.body;
+  const controller = await Controller.findByIdAndUpdate(id, {
     name, 
     email, 
-    phone, 
+    role, 
     devices
   }, {
     new: true,
@@ -56,19 +75,19 @@ export const updateController = asyncWrapper(async (req, res, next) => {
   });
   if (!controller) {
     return next(
-      createCustomError(`No Controller Found with the id: ${controllerID}!`, 404)
+      createCustomError(`No Controller Found with the id: ${id}!`, 404)
     );
   }
   res.status(200).json({ controller });
 });
 
 export const deleteController = asyncWrapper(async (req, res, next) => {
-  const { controllerID } = req.params;
-  const controller = await Controller.findById(controllerID);
+  const { id } = req.params;
+  const controller = await Controller.findById(id);
   
   if (!controller) {
     return next(
-      createCustomError(`No Controller Found with the id: ${controllerID}!`, 404)
+      createCustomError(`No Controller Found with the id: ${id}!`, 404)
     );
   }
 
@@ -77,7 +96,7 @@ export const deleteController = asyncWrapper(async (req, res, next) => {
     { $pull: { controllers: controller._id } }
   );
 
-  await Controller.findByIdAndDelete(controllerID);
+  await Controller.findByIdAndDelete(id);
 
   res.status(200).send("Controller deleted successfully!");
 });

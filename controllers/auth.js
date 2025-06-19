@@ -1,6 +1,6 @@
 import User from "../models/User.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
-import { createCustomError } from "../customErrors/customError.js";
+import { createCustomError } from "../utils/customError.js";
 
 export const register = asyncWrapper(async (req, res, next) => {
   const { name, email, password } = req.body;

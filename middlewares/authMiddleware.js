@@ -1,10 +1,9 @@
 import jwt from "jsonwebtoken";
-import { createCustomError } from "../customErrors/customError.js";
+import { createCustomError } from "../utils/customError.js";
 
 export const authenticateUser = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  // Check if Authorization header exists and starts with "Bearer "
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return next(createCustomError("Authentication Invalid!", 401));
   }

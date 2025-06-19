@@ -1,7 +1,8 @@
-import { createCustomError } from "../customErrors/customError.js";
+import { createCustomError } from "../utils/customError.js";
 import asyncWrapper from "../middlewares/asyncWrapper.js";
 import User from "../models/User.js";
 import Device from "../models/Device.js";
+import { paginate } from "../utils/paginate.js";
 
 export const createUser = asyncWrapper(async (req, res) => {
   const { name, email, password, phone, role } = req.body;
@@ -16,32 +17,45 @@ export const createUser = asyncWrapper(async (req, res) => {
   res.status(201).json({ user });
 });
 
-
 export const getAllUsers = asyncWrapper(async (req, res, next) => {
-  const users = await User.find({});
-  if (users.length === 0) {
-    return next(createCustomError("No Users Found!", 404));
+  const { page, limit, skip } = paginate(req.query);
+
+  const [users, total] = await Promise.all([
+    User.find({})
+      .skip(skip)
+      .limit(limit),
+    User.countDocuments()
+  ]);
+
+  if (!users.length) {
+    return next(createCustomError("No users found!", 404));
   }
-  res.status(200).json({ users });
+
+  res.status(200).json({
+    totalItems: total,
+    currentPage: page,
+    itemsPerPage: limit,
+    items: users
+  });
 });
 
 export const getSingleUser = asyncWrapper(async (req, res, next) => {
-  const { userID } = req.params;
-  const user = await User.findOne({ _id: userID });
+  const { id } = req.params;
+  const user = await User.findOne({ _id: id });
   if (!user) {
     return next(
-      createCustomError(`No User Found with the id: ${userID}!`, 404)
+      createCustomError(`No User Found with the id: ${id}!`, 404)
     );
   }
   res.status(200).json({ user });
 });
 
 export const updateUser = asyncWrapper(async (req, res, next) => {
-  const { userID } = req.params;
+  const { id } = req.params;
   const { name, email, password, phone, role } = req.body;
 
   const user = await User.findOneAndUpdate(
-    { _id: userID },
+    { _id: id },
     { name, email, password, phone, role },
     {
       new: true,
@@ -51,7 +65,7 @@ export const updateUser = asyncWrapper(async (req, res, next) => {
 
   if (!user) {
     return next(
-      createCustomError(`No User Found with the id: ${userID}!`, 404)
+      createCustomError(`No User Found with the id: ${id}!`, 404)
     );
   }
 
@@ -60,12 +74,12 @@ export const updateUser = asyncWrapper(async (req, res, next) => {
 
 
 export const deleteUser = asyncWrapper(async (req, res, next) => {
-  const { userID } = req.params;
-  const user = await User.findById(userID);
+  const { id } = req.params;
+  const user = await User.findById(id);
 
   if (!user) {
     return next(
-      createCustomError(`No User Found with the id: ${userID}!`, 404)
+      createCustomError(`No User Found with the id: ${id}!`, 404)
     );
   }
 

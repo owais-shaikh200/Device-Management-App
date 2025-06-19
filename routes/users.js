@@ -142,10 +142,16 @@ import {
 import { createUserValidator, updateUserValidator } from "../validators/userValidator.js";
 import {validate } from "../middlewares/validate.js";
 
-userRoutes.get("/", authenticateUser, getAllUsers);
-userRoutes.get("/:id", authenticateUser, getSingleUser);
-userRoutes.post("/", authenticateUser, createUserValidator, validate, createUser);
-userRoutes.put("/:id", authenticateUser, updateUserValidator, validate, updateUser);
-userRoutes.delete("/:id", authenticateUser, deleteUser);
+userRoutes
+  .route("/")
+  .get(authenticateUser, getAllUsers)
+  .post(authenticateUser, createUserValidator, validate, createUser);
+
+userRoutes
+  .route("/:id")
+  .get(authenticateUser, getSingleUser)
+  .put(authenticateUser, updateUserValidator, validate, updateUser)
+  .delete(authenticateUser, deleteUser);
+
 
 export default userRoutes;
